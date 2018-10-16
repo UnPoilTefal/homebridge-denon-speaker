@@ -1,0 +1,31 @@
+{
+  "name": "homebridge-denon-speaker",
+  "version": "1.0.0",
+  "description": "Denon and Marantz AVR support as Speaker for Homebridge: https://github.com/nfarina/homebridge",
+  "license": "ISC",
+  "keywords": [
+    "homebridge-plugin",
+    "Denon",
+    "Marantz",
+    "Speaker"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/UnPoilTefal/homebridge-denon-speaker.git"
+  },
+  "bugs": {
+    "url": "http://github.com/UnPoilTefal/homebridge-denon-speaker/issues"
+  },
+  "homepage": "http://github.com/UnPoilTefal/homebridge-denon-speaker",
+  "engines": {
+    "node": ">=0.12.0",
+    "homebridge": ">=0.2.0",
+    "hap-nodejs": ">=0.4.13"
+  },
+  "dependencies": {
+    "request": "^2.69.0",
+    "util": "^0.10.3",
+    "xml2js": "0.4.x",
+    "polling-to-event": "2.0.2"
+  }
+}

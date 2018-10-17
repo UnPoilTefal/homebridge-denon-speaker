@@ -26,7 +26,6 @@
     "request": "^2.69.0",
     "util": "^0.10.3",
     "xml2js": "0.4.x",
-    "polling-to-event": "2.0.2",
-    "debug": "2.6.9"
+    "polling-to-event": "2.1.0"
   }
 }

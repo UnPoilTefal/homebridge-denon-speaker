@@ -146,11 +146,25 @@ denonSpeakerAccessory.prototype = {
     },
 
     getSpeakerMuteCharacteristic: function (callback, context) {
-        callback(null);
+        this.denon.getMuteState(function (err, state) {
+            if (err) {
+                this.log('get mute error: ' + err);
+                callback(err);
+            } else {
+                callback(state);
+            }
+        }.bind(this))
     },
 
     setSpeakerMuteCharacteristic: function (state, callback) {
-        callback(null);
+        this.denon.setMuteState(state, function (err) {
+            if (err) {
+                this.log('set mute error: ' + err);
+                callback(err);
+            } else {
+                callback(null);
+            }
+        }.bind(this));
     },
 
     getSpeakerVolumeCharacteristic: function (callback, context) {

@@ -1,4 +1,5 @@
 # Homebridge-Denon-Speaker
+[![NPM Version](https://img.shields.io/npm/v/homebridge-denon-speaker.svg)](https://www.npmjs.com/package/homebridge-denon-speaker)
 [![Package Quality](http://npm.packagequality.com/shield/homebridge-denon-speaker.svg)](http://packagequality.com/#?package=homebridge-denon-speaker)
 
 homebridge-plugin for Denon AVR control with Apple-Homekit. Works with most Denon AVR since 2011.

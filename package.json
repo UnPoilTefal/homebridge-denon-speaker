@@ -5,6 +5,11 @@
   "author": "UnPoilTefal",
   "license": "ISC",
   "main": "dist/homebridge-denon-speaker.js",
+  "files": [
+    "dist",
+    "README.md",
+    "sample-config.json"
+  ],
   "scripts": {
     "clean": "rimraf ./dist",
     "build": "rimraf ./dist && tsc",

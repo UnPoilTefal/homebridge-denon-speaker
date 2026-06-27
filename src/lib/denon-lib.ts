@@ -3,8 +3,10 @@
  * control your Denon AVR via http with node.js
  */
 
-import fetch from 'node-fetch';
 import { parseStringPromise } from 'xml2js';
+
+// The Denon AVR reports volume in dB from -80 to +18; HomeKit expects 0–98.
+const DENON_VOLUME_OFFSET = 80;
 
 interface DenonXmlResponse {
   item: {
@@ -35,7 +37,6 @@ export interface MainZoneXmlStatus {
 
 export class DenonLib {
   private readonly ip: string;
-  private readonly url_main_zone_xml_lite = '/goform/formMainZone_MainZoneXmlStatusLite.xml';
   private readonly url_main_zone_xml = '/goform/formMainZone_MainZoneXmlStatus.xml';
 
   constructor(ip: string) {
@@ -44,10 +45,10 @@ export class DenonLib {
 
   private async callHttp(url: string): Promise<string> {
     try {
-      const response = await fetch(url);
+      const response = await globalThis.fetch(url);
       return response.text();
     } catch (error) {
-      throw new Error(`Erreur HTTP: ${error}`);
+      throw new Error(`HTTP error: ${error}`);
     }
   }
 
@@ -59,7 +60,7 @@ export class DenonLib {
         powerState: jsResult.item.Power[0].value[0] === 'ON',
         inputSelected: jsResult.item.InputFuncSelect[0].value[0],
         surroundMode: jsResult.item.SurrMode[0].value[0],
-        volumeState: parseInt(jsResult.item.MasterVolume[0].value[0]) + 80,
+        volumeState: parseInt(jsResult.item.MasterVolume[0].value[0]) + DENON_VOLUME_OFFSET,
         muteState: jsResult.item.Mute[0].value[0] === 'on',
         model: jsResult.item.Model[0].value[0],
       };
@@ -105,7 +106,7 @@ export class DenonLib {
 
   async setVolume(wantedVolumeState: number): Promise<number> {
     try {
-      const vol = (+wantedVolumeState - 80).toFixed(1); // volume fix
+      const vol = (+wantedVolumeState - DENON_VOLUME_OFFSET).toFixed(1);
       await this.callHttp(`http://${this.ip}/goform/formiPhoneAppVolume.xml?1+${vol}`);
       return wantedVolumeState;
     } catch (error) {

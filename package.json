@@ -1,6 +1,6 @@
 {
   "name": "homebridge-denon-speaker",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Denon and Marantz AVR support as Speaker for Homebridge: https://github.com/nfarina/homebridge",
   "author": "UnPoilTefal",
   "license": "ISC",
@@ -10,7 +10,9 @@
     "build": "rimraf ./dist && tsc",
     "prepublishOnly": "npm run build",
     "postpublish": "npm run clean",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "keywords": [
     "homebridge-plugin",
@@ -31,7 +33,6 @@
     "node": ">=18"
   },
   "dependencies": {
-    "node-fetch": "^3.3.0",
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
@@ -39,10 +40,12 @@
     "@types/xml2js": "^0.4.12",
     "@typescript-eslint/eslint-plugin": "^6.13.0",
     "@typescript-eslint/parser": "^6.13.0",
+    "@vitest/coverage-v8": "^2.0.0",
     "eslint": "^8.55.0",
     "homebridge": "^2.0.0-beta.0",
     "rimraf": "^5.0.1",
     "ts-node": "^10.9.1",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "vitest": "^2.0.0"
   }
 }

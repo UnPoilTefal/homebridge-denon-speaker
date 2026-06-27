@@ -20,13 +20,18 @@ export = (api: API) => {
   api.registerAccessory('homebridge-denon-speaker', 'DenonAVRSpeaker', DenonSpeakerAccessory);
 };
 
+interface Speaker {
+  active: boolean;
+  volume: number;
+  mute: boolean;
+}
+
 class DenonSpeakerAccessory implements AccessoryPlugin {
 
   private readonly log: Logging;
   private readonly name: string;
   private readonly pollingInterval: number;
   private readonly doPolling: boolean;
-  /* Characteristic States  */
   private speakerState: Speaker = {
     active: false,
     volume: 0,
@@ -38,31 +43,26 @@ class DenonSpeakerAccessory implements AccessoryPlugin {
 
   private denonLib: DenonLib;
 
-  private readonly cacheTimeout: number = 5; // durée de validité du cache en secondes
-  private lastUpdate: number = 0;
+  private readonly cacheTimeout: number = 5; // cache validity in seconds
+  private lastUpdate: number = 0; // timestamp in ms (Date.now())
 
   constructor(log: Logging, config: AccessoryConfig) {
     this.log = log;
     this.name = config.name;
     this.speakerState.volume = config.defaultVolume;
     this.pollingInterval = config.pollingInterval || 30;
-    this.doPolling = config.doPolling || true;
+    this.doPolling = config.doPolling ?? true;
     this.denonLib = new DenonLib(config.ip);
 
-    // Set AccessoryInformation
     this.informationService = new hap.Service.AccessoryInformation()
-      .setCharacteristic(hap.Characteristic.Manufacturer, 'Denon');
+      .setCharacteristic(hap.Characteristic.Manufacturer, 'Denon')
+      .setCharacteristic(hap.Characteristic.SerialNumber, '123-456-789')
+      .setCharacteristic(hap.Characteristic.FirmwareRevision, '1.0.0');
     this.informationService.getCharacteristic(hap.Characteristic.Model)
       .onGet(this.getModel.bind(this));
 
     // Set Speaker Characteristic
     this.speakerService = new hap.Service.Speaker(this.name);
-
-    // Configure AccessoryInformation
-    this.informationService
-      .setCharacteristic(hap.Characteristic.Manufacturer, 'Denon')
-      .setCharacteristic(hap.Characteristic.SerialNumber, '123-456-789')
-      .setCharacteristic(hap.Characteristic.FirmwareRevision, '1.0.0');
 
     // Configure required Speaker characteristics
     this.speakerService.getCharacteristic(hap.Characteristic.Mute)
@@ -124,10 +124,9 @@ class DenonSpeakerAccessory implements AccessoryPlugin {
     ];
   }
 
-  getModel(): Promise<CharacteristicValue> {
-    return this.denonLib.getModelInfo().then((modelInfo) => {
-      return modelInfo.model;
-    });
+  async getModel(): Promise<CharacteristicValue> {
+    const modelInfo = await this.denonLib.getModelInfo();
+    return modelInfo.model;
   }
 
   async getMuteState(): Promise<CharacteristicValue> {
@@ -138,17 +137,14 @@ class DenonSpeakerAccessory implements AccessoryPlugin {
   }
 
   async setMuteState(wantedMuteState: CharacteristicValue) {
-
-    await this.denonLib.setMuteState(wantedMuteState as boolean)
-      .then((muteState: boolean) => {
-        this.log.debug('setMuteState: ' + (muteState ? 'ON' : 'OFF'));
-        this.speakerState.mute = muteState;
-      })
-      .catch((error) => {
-        this.log('setMuteState error: ' + error.message);
-        return Promise.reject(error);
-      });
-
+    try {
+      const muteState = await this.denonLib.setMuteState(wantedMuteState as boolean);
+      this.log.debug('setMuteState: ' + (muteState ? 'ON' : 'OFF'));
+      this.speakerState.mute = muteState;
+    } catch (error) {
+      this.log('setMuteState error: ' + (error as Error).message);
+      throw error;
+    }
   }
 
   async getActiveState() {
@@ -170,7 +166,6 @@ class DenonSpeakerAccessory implements AccessoryPlugin {
   }
 
   async getVolumeState() {
-    // On utilise la valeur en cache si elle est récente
     const now = Date.now();
     if (now - this.lastUpdate >= this.cacheTimeout * 1000) {
       await this.updateAllStates();
@@ -192,33 +187,25 @@ class DenonSpeakerAccessory implements AccessoryPlugin {
   }
 
   async updateAllStates(): Promise<boolean> {
-
-    let updated = false;
-    const currentTime = Math.floor(Date.now() / 1000);
-    if (currentTime - this.lastUpdate < this.cacheTimeout) {
+    const now = Date.now();
+    if (now - this.lastUpdate < this.cacheTimeout * 1000) {
       this.log.debug('Using cached data for updateAllStates');
-      return false; // Don’t update if the cached data is still valid
+      return false;
     }
-    await this.denonLib.getStatus()
-      .then((statusLite: MainZoneXmlStatus) => {
-        this.log.debug(inspect(statusLite));
-        this.speakerState.active = statusLite.powerState;
-        this.speakerState.volume = statusLite.volumeState;
-        this.speakerState.mute = statusLite.muteState;
-        updated = true;
-        this.lastUpdate = currentTime; // Update the lastUpdate time
-      })
-      .catch((error) => {
-        this.log('updateAllStates Error : ' + error.message);
-      });
 
-    return updated;
+    try {
+      const status: MainZoneXmlStatus = await this.denonLib.getStatus();
+      this.log.debug(inspect(status));
+      this.speakerState.active = status.powerState;
+      this.speakerState.volume = status.volumeState;
+      this.speakerState.mute = status.muteState;
+      this.lastUpdate = now;
+      return true;
+    } catch (error) {
+      this.log('updateAllStates Error : ' + (error as Error).message);
+      return false;
+    }
   }
 
-}
-interface Speaker {
-  active: boolean;
-  volume: number;
-  mute: boolean;
 }
 

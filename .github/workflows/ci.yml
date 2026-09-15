@@ -35,3 +35,27 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  # Verdict unique, a nom fixe, pour le ruleset.
+  #
+  # Exiger directement les jobs de matrice rendrait le depot immergeable le
+  # jour ou Renovate retire une version de Node : le check requis
+  # « Lint · Test · Build (Node 18.x) » ne serait plus jamais rapporte, et
+  # rien ne signalerait pourquoi plus aucune PR ne passe.
+  #
+  # « if: always() » est indispensable : sans lui ce job est *skipped* quand
+  # la matrice echoue, le check requis n'est alors jamais rapporte, et
+  # l'echec se presente comme une attente indefinie plutot que comme un echec.
+  verdict:
+    name: Verdict
+    runs-on: ubuntu-latest
+    needs: [check]
+    if: always()
+    steps:
+      - name: La matrice est-elle verte ?
+        run: |
+          echo "resultat de la matrice : ${{ needs.check.result }}"
+          if [ "${{ needs.check.result }}" != "success" ]; then
+            echo "::error::la matrice n'est pas verte"
+            exit 1
+          fi
